@@ -1,0 +1,22 @@
+syntax = "proto3";
+option go_package = "/pb";
+
+message CommonDevice {
+  string brand = 1;
+  int32 id = 2;
+  string uuid = 3;
+  int32 index = 4;
+  int32 memory = 5;
+  bool health = 6;
+  bool allocated = 7;
+}
+
+service QueryDevicesServe {
+  rpc QueryDevices (QueryDevicesRequest) returns (QueryDevicesResponse);
+}
+
+message QueryDevicesRequest {}
+
+message QueryDevicesResponse {
+  repeated CommonDevice devices = 1;
+}

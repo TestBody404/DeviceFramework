@@ -1,0 +1,208 @@
+/* Copyright(C) 2021-2023. Huawei Technologies Co.,Ltd. All rights reserved.
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+*/
+
+// Package collector for Prometheus
+package collector
+
+import (
+	"time"
+
+	"huawei.com/npu-exporter/v6/devmanager/common"
+)
+
+const (
+	// Healthy status of  Health
+	Healthy string = "Healthy"
+	// UnHealthy status of unhealth
+	UnHealthy string = "UnHealthy"
+
+	// LinkUp npu interface up
+	LinkUp string = "UP"
+	// LinkDown npu interface down
+	LinkDown string = "DOWN"
+
+	// convert base
+	base             = 10
+	containerNameLen = 3
+	// cache key
+	npuListCacheKey = "npu-exporter-npu-list"
+	// cache key for parsing-device result
+	containersDevicesCacheKey = "npu-exporter-containers-devices"
+	npuNetworkCacheKey        = "npu-exporter-network-info"
+	initSize                  = 8
+)
+
+// HuaWeiAIChip chip info
+type HuaWeiAIChip struct {
+	// the memoryInfo of the chip
+	Meminf *common.MemoryInfo `json:"memory_info"`
+	// the chip info
+	ChipIfo *common.ChipInfo `json:"chip_info"`
+	// the hbm info
+	HbmInfo *common.HbmInfo `json:"hbm_info"`
+	// the activity virtual device info
+	VDevActivityInfo common.VDevActivityInfo `json:"v_dev_activity_info"`
+	// VDevInfos the virtual device info
+	VDevInfos common.VirtualDevInfo `json:"v_dev_infos"`
+	// the healthy status of the  AI chip
+	HealthStatus string `json:"health_status"`
+	// the error code of the chip
+	ErrorCode int64 `json:"error_code"`
+	// the utilization of the chip
+	Utilization int `json:"utilization"`
+	// the vector utilization of the chip
+	VectorUtilization int `json:"vector_utilization"`
+	// the temperature of the chip
+	Temperature int `json:"temperature"`
+	// the work power of the chip
+	Power float32 `json:"power"`
+	// the work voltage of the chip
+	Voltage float32 `json:"voltage"`
+	// the AI core current frequency of the chip
+	AICoreCurrentFreq uint32 `json:"aicore_current_freq"`
+	// the chip physic ID
+	DeviceID int `json:"device_id"`
+	// the vdie id
+	VDieID string `json:"vdie_id"`
+	// the interface status
+	LinkStatus string `json:"link_status"`
+	// NetHealthStatus chip network health status
+	NetHealthStatus string `json:"net_health_status"`
+	// DevProcessInfo chip process info
+	DevProcessInfo *common.DevProcessInfo
+	// PCIeBusInfo bus info
+	PCIeBusInfo string
+	// BoardInfo board info of device, but not display
+	BoardInfo common.BoardInfo
+	// PcieBwInfo pcie transport and receive bandwidth, have six metrics
+	PcieBwInfo common.PCIEBwStat
+	// NetInfo network info of device, only support training card
+	NetInfo *NpuNetInfo
+}
+
+// BandwidthInfo contains network port real-time bandwidth
+type BandwidthInfo struct {
+	// TxValue transform speed
+	TxValue float64 `json:"tx_value"`
+	// RxValue receive speed
+	RxValue float64 `json:"rx_value"`
+}
+
+// StatInfo the statistics about packets
+type StatInfo struct {
+	// Total number of pause frames received by the MAC
+	MacRxPauseNum float64
+	// Total number of pause frames sent by MAC
+	MacTxPauseNum float64
+	// Total number of PFC frames received by MAC
+	MacRxPfcPktNum float64
+	// Total number of PFC frames sent by MAC
+	MacTxPfcPktNum float64
+	// Total number of bad packets received by MAC
+	MacRxBadPktNum float64
+	// Total number of bad packets sent by MAC
+	MacTxBadPktNum float64
+	// The total number of packets received by the RoCE network card
+	RoceRxAllPktNum float64
+	// The total number of packets sent by the RoCE network card
+	RoceTxAllPktNum float64
+	// The number of bad packets received by the RoCE network card
+	RoceRxErrPktNum float64
+	// The number of bad packets sent by the RoCE network card
+	RoceTxErrPktNum float64
+	// The number of CNP type packets received by the RoCE network card
+	RoceRxCnpPktNum float64
+	// The number of CNP type packets sent by the RoCE network card
+	RoceTxCnpPktNum float64
+	// Number of RoCE network card retry messages
+	RoceNewPktRtyNum float64
+	// Total number of bytes of bad packets sent by MAC
+	MacTxBadOctNum float64
+	// Total number of bytes of bad packets received by MAC
+	MacRxBadOctNum float64
+	// The number of unexpected ACK messages received by the RoCE network card
+	RoceUnexpectedAckNum float64
+	// The number of out-of-order packets received by the RoCE network card
+	RoceOutOfOrderNum float64
+	// The number of packets with domain segment verification errors received by the RoCE network card
+	RoceVerificationErrNum float64
+	// The number of messages generated by abnormal QP connection status received by the RoCE network card
+	RoceQpStatusErrNum float64
+	// The number of ecn
+	RoceEcnDBNum float64
+	// The number of err info
+	MacRXFcsErrPktNum float64
+}
+
+// LinkStatInfo refers to the historical link statistics, including the times of link-up
+type LinkStatInfo struct {
+	// The times of link-up
+	LinkUPNum float64
+}
+
+// LinkSpeedInfo the transfer rate of network port
+type LinkSpeedInfo struct {
+	// The rate of network port
+	Speed float64
+}
+
+// OpticalInfo indicates the optical module information
+type OpticalInfo struct {
+	// Optical module status, indicating whether it is in place (present)
+	OpticalState float64
+	// Power sent by No.0 optical module
+	OpticalTxPower0 float64
+	// Power sent by No.1 optical module
+	OpticalTxPower1 float64
+	// Power sent by No.2 optical module
+	OpticalTxPower2 float64
+	// Power sent by No.3 optical module
+	OpticalTxPower3 float64
+	// Reception power of No.0 optical module
+	OpticalRxPower0 float64
+	// Reception power of No.1 optical module
+	OpticalRxPower1 float64
+	// Reception power of No.2 optical module
+	OpticalRxPower2 float64
+	// Reception power of No.3 optical module
+	OpticalRxPower3 float64
+	// Optical module voltage
+	OpticalVcc float64
+	// Optical module temperature
+	OpticalTemp float64
+}
+
+// NpuNetInfo network info of npu
+type NpuNetInfo struct {
+	// The optical info
+	OpticalInfo OpticalInfo
+	// The transfer rate of network port
+	LinkSpeedInfo LinkSpeedInfo
+	// Historical link statistics of network ports
+	LinkStatInfo LinkStatInfo
+	// Statistics about packets
+	StatInfo StatInfo
+	// Network port real-time bandwidth
+	BandwidthInfo BandwidthInfo
+}
+
+// HuaWeiNPUCard device
+type HuaWeiNPUCard struct {
+	// The chip list on the card
+	DeviceList []*HuaWeiAIChip `json:"device_list"`
+	// Timestamp
+	Timestamp time.Time `json:"timestamp"`
+	// The id of the NPU card
+	CardID int `json:"card_id"`
+}
